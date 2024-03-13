@@ -1,5 +1,5 @@
 Libname NBA "/home/u63803350/sasuser.v94/BasketballData/UnGroupedPlayerstats";
-%LET playername=Tyrese_Haliburton;
+%LET playername=Cam_Thomas;
 /* Change player Name here using underscores instead of spaces */
 /* Only players with more than 40 Games started or more than 10 points scored per game included */
 ODS NOPROCTITLE;
@@ -7,7 +7,7 @@ ODS GRAPHICS ON;
 FOOTNOTE "Data taken from basketball-reference on 3/10/24 and includes all games from the 2023-2024 season.";
 PROC SQL ;
 	CREATE TABLE work.playerreportdata as
-	SELECT  G, GmSc, FP, PTS, TRB, AST, STL, BLK, TOV, FG, FGA, '3P'n, '3PA'n, FT, FTA, Opp, H, PlayerName
+	SELECT  G, GmSc, FP, PTS, TRB, AST, STL, BLK, TOV, FG, FGA, '3P'n, '3PA'n, FT, FTA, Opp, H, PlayerName, F
 	FROM NBA.allplayers
 	WHERE PlayerName="&playername" AND Start ne "DNP"
 	ORDER BY G;
@@ -55,6 +55,23 @@ PROC MEANS data=work.playerreportdataWL mean;
 	VAR GmSc PTS TRB AST STL BLK TOV;
 	BY PlayerName;
 	CLASS WL;
+run;
+/* Reports player stats separated by Wins and Losses */
+DATA work.playerreportdataHA;
+	SET work.playerreportdata;
+	IF F="@" THEN HomeAway="Away";
+	ELSE HomeAway="Home";
+run;
+/* Generates Home or away column from F variable.  Necessary because value is either empty or @ */
+PROC SORT data=work.playerreportdataHA;
+	BY HomeAway;
+run;
+/* Sort By home or away for next PROC MEANS step*/
+Title2 "Player Statistics by Home or Away";
+PROC MEANS data=work.playerreportdataHA mean;
+	VAR GmSc PTS TRB AST STL BLK TOV;
+	BY PlayerName;
+	CLASS HomeAway;
 run;
 ods graphics / reset;
 ODS PROCTITLE;
